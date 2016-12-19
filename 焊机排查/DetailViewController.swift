@@ -22,44 +22,45 @@ class DetailViewController: UIViewController,UITextFieldDelegate {
     @IBOutlet weak var beizhu: UITextView!
     var ID:Int = 0
     var s:[String:UITextField?]!
+    var ischanged = false
     override func viewDidLoad() {
         super.viewDidLoad()
         if isAddNewItem {
             s=["状态":statetext,"设备编号":sbbh,"设备名称":sbmc,"电流表1":dlb1,"电压表1":dyb1,"电流表2":dlb2,"电压表2":dyb2,"地点":didian]
         }else
-        if let ss = detail{
-            s=["状态":statetext,"设备编号":sbbh,"设备名称":sbmc,"电流表1":dlb1,"电压表1":dyb1,"电流表2":dlb2,"电压表2":dyb2,"地点":didian]
-
-             ID = ss["ID"] as! Int
-            print(ID)
-        navigationItem.title=ss["设备编号"] as? String
-//            statetext.text=ss["状态"] as? String
-//            sbbh.text=ss["设备编号"] as? String
-//            sbmc.text=ss["设备名称"] as? String
-            if ss["状态"] as? String=="未登记"{
-                stateplain.selectedSegmentIndex=0
-                statetext.textColor=UIColor.gray
-            }else {
-                stateplain.selectedSegmentIndex=1
-                statetext.textColor=UIColor.blue
-            }
-            
-            func ys(string:String,textfield:UITextField!){
-                if ss[string] is NSNumber{
-                    if ss[string] as! Int == 0{
-                        textfield.text=""
-                    }else{
-                        textfield.text=String(describing: ss[string] as! Int)
-                    }
-                }else{
-                textfield.text=ss[string] as? String
+            if let ss = detail{
+                s=["状态":statetext,"设备编号":sbbh,"设备名称":sbmc,"电流表1":dlb1,"电压表1":dyb1,"电流表2":dlb2,"电压表2":dyb2,"地点":didian]
+                
+                ID = ss["ID"] as! Int
+                print(ID)
+                navigationItem.title=ss["设备编号"] as? String
+                //            statetext.text=ss["状态"] as? String
+                //            sbbh.text=ss["设备编号"] as? String
+                //            sbmc.text=ss["设备名称"] as? String
+                if ss["状态"] as? String=="未登记"{
+                    stateplain.selectedSegmentIndex=0
+                    statetext.textColor=UIColor.gray
+                }else {
+                    stateplain.selectedSegmentIndex=1
+                    statetext.textColor=UIColor.blue
                 }
-            }
-            for (i,j)in s{
-                ys(string: i, textfield: j)
-            }
-            beizhu.text=ss["备注"] as? String
-        // Do any additional setup after loading the view.
+                
+                func ys(string:String,textfield:UITextField!){
+                    if ss[string] is NSNumber{
+                        if ss[string] as! Int == 0{
+                            textfield.text=""
+                        }else{
+                            textfield.text=String(describing: ss[string] as! Int)
+                        }
+                    }else{
+                        textfield.text=ss[string] as? String
+                    }
+                }
+                for (i,j)in s{
+                    ys(string: i, textfield: j)
+                }
+                beizhu.text=ss["备注"] as? String
+                // Do any additional setup after loading the view.
         }
     }
     override func didReceiveMemoryWarning() {
@@ -86,21 +87,54 @@ class DetailViewController: UIViewController,UITextFieldDelegate {
     }
     let d:sqlite=sqlite()
     var isAddNewItem=false
+    func showSucceed()  {
+        let uiviewalert = UIAlertController(title: "保存成功", message: "保存成功", preferredStyle: .alert)
+        let ok = UIAlertAction(title: "知道了", style: .default, handler: nil)
+        uiviewalert.addAction(ok)
+        present(uiviewalert, animated: true, completion: nil)
+    }
+    func showFailed()  {
+        let uiviewalert = UIAlertController(title: "保存失败", message: "保存失败", preferredStyle: .alert)
+        let ok = UIAlertAction(title: "知道了", style: .default, handler: nil)
+        uiviewalert.addAction(ok)
+        present(uiviewalert, animated: true, completion: nil)
+    }
     @IBAction func save(_ sender: Any) {
-        if isAddNewItem {
-            d.add(sbbh.text!,sbmc.text!, statetext.text!, dlb1.text!, dyb1.text!, dlb2.text!, dyb2.text!, didian.text! , beizhu.text!)
-        }else{
-        d.update(ID,sbbh.text!,sbmc.text!,statetext.text!, dlb1.text!, dyb1.text!, dlb2.text!, dyb2.text!, didian.text!, beizhu.text!)
+        if let  activeuitextfield=self.activeuitextfield{
+            textFieldDidEndEditing(activeuitextfield)
+        }
+        if isAddNewItem&&ischanged {
+            ID=d.add(sbbh.text!,sbmc.text!, statetext.text!, dlb1.text!, dyb1.text!, dlb2.text!, dyb2.text!, didian.text! , beizhu.text!)
+            if ID != 0 {
+                isAddNewItem=false
+                ischanged=false
+                showSucceed()
+            }else{
+                showFailed()
+            }
+            
+        }else if ischanged{
+            let inf = d.update(ID,sbbh.text!,sbmc.text!,statetext.text!, dlb1.text!, dyb1.text!, dlb2.text!, dyb2.text!, didian.text!, beizhu.text!)
+            if inf == 1 {
+                ischanged=false
+                showSucceed()
+            }else{
+                showFailed()
+            }
+            
         }
     }
     var oldvalue:String=""
+    var activeuitextfield:UITextField? = UITextField()
+    
     func textFieldDidBeginEditing(_ textField: UITextField){
-      oldvalue =  textField.text!
+        oldvalue =  textField.text!
+        activeuitextfield=textField
+        
     }
-   
     
     func textFieldDidEndEditing(_ textField: UITextField){
-        if oldvalue != textField.text!{
+        if let textfield=activeuitextfield, oldvalue != textfield.text! {
             var textFieldtitle:String=""
             for(i,j)in s{
                 if j! == textField{
@@ -114,14 +148,14 @@ class DetailViewController: UIViewController,UITextFieldDelegate {
             dateformatter.locale=Locale.current
             dateformatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
             let stringDate = dateformatter.string(from: currentDate)
-        
-            
             beizhu.text=beizhu.text!+textFieldtitle+"于"+stringDate+"由"+oldvalue+"修改为"+textField.text!+";\n"
+            ischanged=true
+            activeuitextfield=nil
         }
     }
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(true)
         IQKeyboardManager.sharedManager().enable=true
     }
-   
+    
 }
