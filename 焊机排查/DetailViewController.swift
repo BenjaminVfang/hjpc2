@@ -99,6 +99,12 @@ class DetailViewController: UIViewController,UITextFieldDelegate {
         uiviewalert.addAction(ok)
         present(uiviewalert, animated: true, completion: nil)
     }
+    func showNotChange()  {
+        let uiviewalert = UIAlertController(title: "没有发生修改", message: "没有发生修改", preferredStyle: .alert)
+        let ok = UIAlertAction(title: "知道了", style: .default, handler: nil)
+        uiviewalert.addAction(ok)
+        present(uiviewalert, animated: true, completion: nil)
+    }
     @IBAction func save(_ sender: Any) {
         if let  activeuitextfield=self.activeuitextfield{
             textFieldDidEndEditing(activeuitextfield)
@@ -122,6 +128,8 @@ class DetailViewController: UIViewController,UITextFieldDelegate {
                 showFailed()
             }
             
+        }else{
+            showNotChange()
         }
     }
     var oldvalue:String=""
